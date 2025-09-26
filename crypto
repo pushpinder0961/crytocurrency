@@ -1,0 +1,51 @@
+// server.js
+const express = require('express');
+const app = express();
+const port = 3000;
+
+app.use(express.json());
+
+let students = {
+  "alice": { name: "Alice", balance: 100 },
+  "bob": { name: "Bob", balance: 100 },
+  "carol": { name: "Carol", balance: 100 }
+};
+
+let transactions = []; // will store { from, to, amount, timestamp, description }
+
+// Get all students with balances
+app.get('/students', (req, res) => {
+  res.json(students);
+});
+
+// Get transaction history
+app.get('/transactions', (req, res) => {
+  res.json(transactions);
+});
+
+// Award coins (teacher action)
+app.post('/award', (req, res) => {
+  const { to, amount, description } = req.body;
+  if (!students[to]) {
+    return res.status(400).json({ error: 'Student not found' });
+  }
+  if (amount <= 0) {
+    return res.status(400).json({ error: 'Amount must be positive' });
+  }
+
+  students[to].balance += amount;
+  transactions.push({ from: "Teacher", to, amount, timestamp: new Date(), description });
+  res.json({ message: 'Coins awarded' });
+});
+
+// Transfer coins between students
+app.post('/transfer', (req, res) => {
+  const { from, to, amount, description } = req.body;
+  if (!students[from] || !students[to]) {
+    return res.status(400).json({ error: 'Student not found' });
+  }
+  if (amount <= 0) {
+    return res.status(400).json({ error: 'Amount must be positive' });
+  }
+  if (students[from].balance < amount) {
+    return res.status(
